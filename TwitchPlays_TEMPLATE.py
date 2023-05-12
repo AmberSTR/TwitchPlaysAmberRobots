@@ -4,19 +4,29 @@ import keyboard
 import pydirectinput
 import pyautogui
 import TwitchPlays_Connection
+import cmd_4_single_move
 from TwitchPlays_KeyCodes import *
+from ctypes import *
+import cmd_1_get_status
+import cmd_6_cartesian_ctrl
+
+SENSITIVE = 0.05
+class Status:
+    now = []
+    next = []
+
 
 ##################### GAME VARIABLES #####################
 
 # Replace this with your Twitch username. Must be all lowercase.
-TWITCH_CHANNEL = 'dougdougw' 
+TWITCH_CHANNEL = 'amberobotics'
 
 # If streaming on Youtube, set this to False
 STREAMING_ON_TWITCH = True
 
 # If you're streaming on Youtube, replace this with your Youtube's Channel ID
 # Find this by clicking your Youtube profile pic -> Settings -> Advanced Settings
-YOUTUBE_CHANNEL_ID = "YOUTUBE_CHANNEL_ID_HERE" 
+YOUTUBE_CHANNEL_ID = "UCWIkShYKwvc1XXpcbx0qOYQ"
 
 # If you're using an Unlisted stream to test on Youtube, replace "None" below with your stream's URL in quotes.
 # Otherwise you can leave this as "None"
@@ -35,7 +45,7 @@ MESSAGE_RATE = 0.5
 # This is helpful for games where too many inputs at once can actually hinder the gameplay.
 # Setting to ~50 is good for total chaos, ~5-10 is good for 2D platformers
 MAX_QUEUE_LENGTH = 20
-MAX_WORKERS = 100 # Maximum number of threads you can process at a time 
+MAX_WORKERS = 100  # Maximum number of threads you can process at a time
 
 last_time = time.time()
 message_queue = []
@@ -59,6 +69,16 @@ else:
     t = TwitchPlays_Connection.YouTube()
     t.youtube_connect(YOUTUBE_CHANNEL_ID, YOUTUBE_STREAM_URL)
 
+
+def sync():
+    Status.now = cmd_1_get_status.get()
+    for i in range (14):
+        Status.now[i] = round(Status.now[i],4)
+    Status.next = Status.now
+
+def debugprint():
+    print(f"X={Status.next[8]},Y={Status.next[9]},Z={Status.next[10]}")
+
 def handle_message(message):
     try:
         msg = message['message'].lower()
@@ -79,48 +99,85 @@ def handle_message(message):
         ###################################
 
         # If the chat message is "left", then hold down the A key for 2 seconds
-        if msg == "left": 
-            HoldAndReleaseKey(A, 2)
+        if msg == "left":
+            sync()
+            Status.next[8] = round(Status.next[8]-SENSITIVE,4)
+            cmd_6_cartesian_ctrl.move(Status.next)
+            debugprint()
 
         # If the chat message is "right", then hold down the D key for 2 seconds
-        if msg == "right": 
-            HoldAndReleaseKey(D, 2)
+        if msg == "right":
+            sync()
+            Status.next[8] = round(Status.next[8]+SENSITIVE,4)
+            cmd_6_cartesian_ctrl.move(Status.next)
+            debugprint()
 
         # If message is "drive", then permanently hold down the W key
-        if msg == "drive": 
-            ReleaseKey(S) #release brake key first
-            HoldKey(W) #start permanently driving
+        if msg == "forward":
+            sync()
+            Status.next[9] = round(Status.next[9]+SENSITIVE,4)
+            cmd_6_cartesian_ctrl.move(Status.next)
+            debugprint()
 
         # If message is "reverse", then permanently hold down the S key
-        if msg == "reverse": 
-            ReleaseKey(W) #release drive key first
-            HoldKey(S) #start permanently reversing
+        if msg == "backward":
+            sync()
+            Status.next[9] = round(Status.next[9]-SENSITIVE,4)
+            cmd_6_cartesian_ctrl.move(Status.next)
+            debugprint()
 
-        # Release both the "drive" and "reverse" keys
-        if msg == "stop": 
-            ReleaseKey(W)
-            ReleaseKey(S)
+        if msg == "up":
+            sync()
+            Status.next[10] = round(Status.next[10]+SENSITIVE,4)
+            cmd_6_cartesian_ctrl.move(Status.next)
+            debugprint()
+        if msg == "down":
+            sync()
+            Status.next[10] =round(Status.next[10]-SENSITIVE,4)
+            cmd_6_cartesian_ctrl.move(Status.next)
+            debugprint()
+        if msg == "roll+":
+            sync()
+            Status.next[11] =round(Status.next[11]+SENSITIVE*5,4)
+            cmd_6_cartesian_ctrl.move(Status.next)
+            debugprint()
+        if msg == "roll-":
+            sync()
+            Status.next[11] =round(Status.next[11]-SENSITIVE*5,4)
+            cmd_6_cartesian_ctrl.move(Status.next)
+            debugprint()
+        if msg == "pitch+":
+            sync()
+            Status.next[12] =round(Status.next[12]+SENSITIVE*5,4)
+            cmd_6_cartesian_ctrl.move(Status.next)
+            debugprint()
+        if msg == "pitch-":
+            sync()
+            Status.next[12] =round(Status.next[12]-SENSITIVE*5,4)
+            cmd_6_cartesian_ctrl.move(Status.next)
+            debugprint()
+        if msg == "yaw+":
+            sync()
+            Status.next[13] =round(Status.next[13]+SENSITIVE*5,4)
+            cmd_6_cartesian_ctrl.move(Status.next)
+            debugprint()
+        if msg == "yaw-":
+            sync()
+            Status.next[13] =round(Status.next[13]-SENSITIVE*5,4)
+            cmd_6_cartesian_ctrl.move(Status.next)
+            debugprint()
+        posjoint=["1+","2+","3+","4+","5+","6+","7+"]
+        negjoint=["1-","2-","3-","4-","5-","6-","7-"]
+        for i in range(7):
+            if msg == posjoint[i]:
+                sync()
+                Status.next[i] = round(Status.next[i]+SENSITIVE*5,4)
+                cmd_4_single_move.move(target=Status.next)
+            if msg == negjoint[i]:
+                sync()
+                Status.next[i] = round(Status.next[i]-SENSITIVE*5,4)
+                cmd_4_single_move.move(target=Status.next)
 
-        # Press the spacebar for 0.7 seconds
-        if msg == "brake": 
-            HoldAndReleaseKey(SPACE, 0.7)
-
-        # Press the left mouse button down for 1 second, then release it
-        if msg == "shoot": 
-            pydirectinput.mouseDown(button="left")
-            time.sleep(1)
-            pydirectinput.mouseUp(button="left")
-
-        # Move the mouse up by 30 pixels
-        if msg == "aim up":
-            pydirectinput.moveRel(0, -30, relative=True)
-
-        # Move the mouse right by 200 pixels
-        if msg == "aim right":
-            pydirectinput.moveRel(200, 0, relative=True)
-
-        ####################################
-        ####################################
 
     except Exception as e:
         print("Encountered exception: " + str(e))
@@ -130,11 +187,11 @@ while True:
 
     active_tasks = [t for t in active_tasks if not t.done()]
 
-    #Check for new messages
+    # Check for new messages
     new_messages = t.twitch_receive_messages();
     if new_messages:
-        message_queue += new_messages; # New messages are added to the back of the queue
-        message_queue = message_queue[-MAX_QUEUE_LENGTH:] # Shorten the queue to only the most recent X messages
+        message_queue += new_messages;  # New messages are added to the back of the queue
+        message_queue = message_queue[-MAX_QUEUE_LENGTH:]  # Shorten the queue to only the most recent X messages
 
     messages_to_handle = []
     if not message_queue:
@@ -161,5 +218,5 @@ while True:
             if len(active_tasks) <= MAX_WORKERS:
                 active_tasks.append(thread_pool.submit(handle_message, message))
             else:
-                print(f'WARNING: active tasks ({len(active_tasks)}) exceeds number of workers ({MAX_WORKERS}). ({len(message_queue)} messages in the queue)')
- 
+                print(
+                    f'WARNING: active tasks ({len(active_tasks)}) exceeds number of workers ({MAX_WORKERS}). ({len(message_queue)} messages in the queue)')
