@@ -19,14 +19,14 @@ class Status:
 ##################### GAME VARIABLES #####################
 
 # Replace this with your Twitch username. Must be all lowercase.
-TWITCH_CHANNEL = 'amberobotics'
+TWITCH_CHANNEL = 'TWITCH_CHANNEL'
 
 # If streaming on Youtube, set this to False
 STREAMING_ON_TWITCH = True
 
 # If you're streaming on Youtube, replace this with your Youtube's Channel ID
 # Find this by clicking your Youtube profile pic -> Settings -> Advanced Settings
-YOUTUBE_CHANNEL_ID = "UCWIkShYKwvc1XXpcbx0qOYQ"
+YOUTUBE_CHANNEL_ID = "YOUTUBE_CHANNEL_ID"
 
 # If you're using an Unlisted stream to test on Youtube, replace "None" below with your stream's URL in quotes.
 # Otherwise you can leave this as "None"
@@ -92,11 +92,7 @@ def handle_message(message):
         # Use the "HoldAndReleaseKey(KEYCODE, SECONDS)" function press down a key for X seconds, then release it.
         # Use the pydirectinput library to press or move the mouse
 
-        # I've added some example videogame logic code below:
 
-        ###################################
-        # Example GTA V Code 
-        ###################################
 
         # If the chat message is "left", then hold down the A key for 2 seconds
         if msg == "left":
